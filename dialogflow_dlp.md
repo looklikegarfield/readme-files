@@ -1,35 +1,21 @@
-# Sentinel Policies for "gcp_dialogflow_dlp"
-
-Sentinel policy files in this directory can be used with Terraform Enterprise to ensure that provisioned GCP Dialogflow agent comply with the organization's provisioning rules. This policy enforces use of DLP (security_settings) for Dialogflow agent.
-
-The Policy restricts the following resources:
-
-* google_dialogflow_cx_agent.security_settings
-
-## Pre Requistes 
-Below are pre-requistes 
-* `sentinel`
-* `python3`
-
-
-## Imports
-
-This policy uses the tfplan-functions import, strings and types import. 
-
-Import common-functions/tfplan-functions/tfplan-functions.sentinel with alias "plan"
+### gcp_dialogflow_dlp.sentinel
 ```
-import "tfplan-functions" as plan
+GCP_DIALOGFLOW_DLP: As per policy, Enforce use of DLP for Dialogflow agent.
+```
+
+#### Imports
+```
+import "strings"
 import "types"
+import "tfplan-functions" as plan
 ```
 
-
-## # Get all dialogflow Resources
-```
+#### Get all Dialogflow Resources
 all_df_Resources = plan.find_resources("google_dialogflow_cx_agent")
 
-```
-# Working Code to Enforce policy
-The code finds the resource type "google_dialogflow_cx_agent" and ensure security_settings for Dialogflow agent should not be null.
+
+#### Working Code
+The below code will iterate each member of all_df_Resources and Will check the value of security_settings attribute and validate the said policy. 
 
 ```
 dlp_messages = {}
@@ -37,7 +23,6 @@ for all_df_Resources as address, rc {
 	dlp_security = plan.evaluate_attribute(rc.change.after, "security_settings")
 
 	is_dlp_security_null = rule { types.type_of(dlp_security) is "null" }
-	#print (is_dlp_security_null )
 
 	if is_dlp_security_null is true {
 
@@ -58,28 +43,11 @@ for all_df_Resources as address, rc {
 	}
 
 }
+```
 
+#### Main Rule
+The main function returns true/false as per value of GCP_DIALOGFLOW_DLP 
+```
 GCP_DIALOGFLOW_DLP = rule { length(dlp_messages) is 0 }
-
-
-```
-## The Main Function
-This function returns "False" if length of violations is not 0.
-
-```
 main = rule { GCP_DIALOGFLOW_DLP }
-
-```
-
-## Testing a Policy
-
-```
-sentinel test <sentinel file>
-```
-#####  Example: 
-```
-$ sentinel test gcp_dialogflow_dlp.sentinel
-  PASS - gcp_dialogflow_dlp.sentinel
-  PASS - test/gcp_dialogflow_dlp/fail.hcl
-  PASS - test/gcp_dialogflow_dlp/pass.hcl
 ```
